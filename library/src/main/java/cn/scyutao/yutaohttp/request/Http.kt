@@ -61,16 +61,16 @@ open class RequestWrapper {
         }
         _request = getRequest(method, url, Response.ErrorListener {
             if (Http.debug){
-                Log.e("kolley","┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
-                Log.e("kolley","│请求地址：$url")
+                Log.e("YuTaoHttp","┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.e("YuTaoHttp","│请求地址：$url")
                 if (_params.isNotEmpty()){
-                    Log.e("kolley","│ params：$_params")
+                    Log.e("YuTaoHttp","│ params：$_params")
                 }
                 if (raw != null){
-                    Log.e("kolley","│    raw：$raw")
+                    Log.e("YuTaoHttp","│    raw：$raw")
                 }
-                Log.e("kolley","│请求结果：$it")
-                Log.e("kolley","└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.e("YuTaoHttp","│请求结果：$it")
+                Log.e("YuTaoHttp","└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
             }
             _fail(it)
             _finish()
@@ -78,16 +78,16 @@ open class RequestWrapper {
         _request.retryPolicy = DefaultRetryPolicy(60 * 1000, 0, 1.0f)
         _request._listener = Response.Listener {
             if (Http.debug) {
-                Log.d("kolley", "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
-                Log.d("kolley",    "│请求地址：$url")
+                Log.d("YuTaoHttp", "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.d("YuTaoHttp",    "│请求地址：$url")
                 if (_params.isNotEmpty()){
-                    Log.d("kolley","│ params：$_params")
+                    Log.d("YuTaoHttp","│ params：$_params")
                 }
                 if (raw != null){
-                    Log.d("kolley","│    raw：$raw")
+                    Log.d("YuTaoHttp","│    raw：$raw")
                 }
-                Log.d("kolley", "│请求结果：" + String(it))
-                Log.d("kolley", "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.d("YuTaoHttp", "│请求结果：" + String(it))
+                Log.d("YuTaoHttp", "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
             }
             _success(it)
             _finish()
