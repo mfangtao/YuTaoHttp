@@ -1,0 +1,3 @@
+rootProject.name='YuTaoHttp'
+include ':app'
+include ':library'
