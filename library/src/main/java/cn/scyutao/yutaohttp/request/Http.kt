@@ -20,7 +20,7 @@ open class RequestWrapper {
     var raw: String? = null
     var tag: Any? = null
     private var _start: (() -> Unit) = {}
-    private var _success: (ByteArray) -> Unit = {}
+    private var _success: (String) -> Unit = {}
     private var _fail: (VolleyError) -> Unit = {}
     private var _finish: (() -> Unit) = {}
     protected val _params: MutableMap<String, String> = mutableMapOf()
@@ -36,7 +36,7 @@ open class RequestWrapper {
         _fail = onError
     }
 
-    fun onSuccess(onSuccess: (ByteArray) -> Unit) {
+    fun onSuccess(onSuccess: (String) -> Unit) {
         _success = onSuccess
     }
 
@@ -89,7 +89,7 @@ open class RequestWrapper {
                 Log.d("YuTaoHttp", "│请求结果：" + String(it))
                 Log.d("YuTaoHttp", "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
             }
-            _success(it)
+            _success(String(it))
             _finish()
         }
         fillRequest()
