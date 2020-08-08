@@ -2,6 +2,7 @@ package cn.scyutao.yutaohttp.request
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import com.android.volley.*
 import com.android.volley.toolbox.Volley
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
@@ -60,6 +61,7 @@ open class RequestWrapper {
             url = getGetUrl(url, _params) { it.toQueryString() }
         }
         _request = getRequest(method, url, Response.ErrorListener {
+            Toast.makeText(Http.mcontext,it.message.toString(),Toast.LENGTH_LONG).show()
             if (Http.debug){
                 Log.e("YuTaoHttp","┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
                 Log.e("YuTaoHttp","│请求地址：$url")
@@ -142,8 +144,10 @@ class RequestPairs {
 object Http {
     private var mRequestQueue: RequestQueue? = null
     var debug = false
+    lateinit var mcontext:Context
     fun init(context: Context,debug:Boolean = false) {
         Http.debug = debug
+        mcontext = context
         mRequestQueue
         // Set up the network to use OKHttpURLConnection as the HTTP client.
         // getApplicationContext() is key, it keeps you from leaking the
