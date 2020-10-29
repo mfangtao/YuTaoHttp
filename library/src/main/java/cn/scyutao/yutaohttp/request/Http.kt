@@ -24,9 +24,9 @@ open class RequestWrapper {
     private var _success: (String) -> Unit = {}
     private var _fail: (VolleyError) -> Unit = {}
     private var _finish: (() -> Unit) = {}
-    protected val _params: MutableMap<String, String> = mutableMapOf()
-    protected val _fileParams: MutableMap<String, String> = mutableMapOf() 
-    protected val _headers: MutableMap<String, String> = mutableMapOf()
+    var _params: MutableMap<String, String> = mutableMapOf()
+    var _fileParams: MutableMap<String, String> = mutableMapOf()
+    var _headers: MutableMap<String, String> = mutableMapOf()
     
 
     fun onStart(onStart: () -> Unit) {
