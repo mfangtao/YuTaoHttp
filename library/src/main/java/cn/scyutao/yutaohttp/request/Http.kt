@@ -83,7 +83,7 @@ open class RequestWrapper {
             if (Http.debug) {
                 Log.d("YuTaoHttp", "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
                 Log.d("YuTaoHttp",    "│请求地址：$url")
-                Log.e("YuTaoHttp","│ headers：$_headers")
+                Log.d("YuTaoHttp","│ headers：$_headers")
                 if (_params.isNotEmpty()){
                     Log.d("YuTaoHttp","│ params：$_params")
                 }
