@@ -1,5 +1,6 @@
 package cn.scyutao.yutaohttp.request
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -13,6 +14,7 @@ import cn.scyutao.yutaohttp.upload.UploadRequest
 import okhttp3.OkHttpClient
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.HashMap
 
 open class RequestWrapper {
     internal lateinit var _request: ByteRequest
@@ -27,7 +29,7 @@ open class RequestWrapper {
     var _params: MutableMap<String, String> = mutableMapOf()
     var _fileParams: MutableMap<String, String> = mutableMapOf()
     var _headers: MutableMap<String, String> = mutableMapOf()
-    
+
 
     fun onStart(onStart: () -> Unit) {
         _start = onStart
@@ -45,7 +47,7 @@ open class RequestWrapper {
         _finish = onFinish
     }
 
-    val pairs = fun (map: MutableMap<String,String>, makePairs: RequestPairs.() -> Unit){
+    val pairs = fun(map: MutableMap<String, String>, makePairs: RequestPairs.() -> Unit) {
         val requestPair = RequestPairs()
         requestPair.makePairs()
         map.putAll(requestPair.pairs)
@@ -57,41 +59,60 @@ open class RequestWrapper {
 
     fun excute() {
         var url = url
+        if (url.subSequence(0, 7) != "http://" && url.subSequence(0, 8) != "https://") {
+            if (Http.baseUrl.isNotEmpty()) {
+                url = Http.baseUrl + url
+            }
+        }
+
+
         if (Request.Method.GET == method) {
             url = getGetUrl(url, _params) { it.toQueryString() }
         }
-        _request = getRequest(method, url, Response.ErrorListener {
-            Toast.makeText(Http.mcontext,it.message.toString(),Toast.LENGTH_LONG).show()
-            if (Http.debug){
-                Log.e("YuTaoHttp","┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
-                Log.e("YuTaoHttp","│请求地址：$url")
-                Log.e("YuTaoHttp","│ headers：$_headers")
-                if (_params.isNotEmpty()){
-                    Log.e("YuTaoHttp","│ params：$_params")
+        _request = getRequest(method, url) {
+            Toast.makeText(Http.mcontext, it.message.toString(), Toast.LENGTH_LONG).show()
+            if (Http.debug) {
+                Log.e(
+                    "YuTaoHttp",
+                    "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+                )
+                Log.e("YuTaoHttp", "│请求地址：$url")
+                Log.e("YuTaoHttp", "│headers：$_headers")
+                if (_params.isNotEmpty()) {
+                    Log.e("YuTaoHttp", "│ params：$_params")
                 }
-                if (raw != null){
-                    Log.e("YuTaoHttp","│    raw：$raw")
+                if (raw != null) {
+                    Log.e("YuTaoHttp", "│    raw：$raw")
                 }
-                Log.e("YuTaoHttp","│请求结果：$it")
-                Log.e("YuTaoHttp","└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.e("YuTaoHttp", "│请求结果：$it")
+                Log.e(
+                    "YuTaoHttp",
+                    "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+                )
             }
             _fail(it)
             _finish()
-        })
+        }
         _request.retryPolicy = DefaultRetryPolicy(60 * 1000, 0, 1.0f)
         _request._listener = Response.Listener {
             if (Http.debug) {
-                Log.d("YuTaoHttp", "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
-                Log.d("YuTaoHttp",    "│请求地址：$url")
-                Log.d("YuTaoHttp","│ headers：$_headers")
-                if (_params.isNotEmpty()){
-                    Log.d("YuTaoHttp","│ params：$_params")
+                Log.d(
+                    "YuTaoHttp",
+                    "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+                )
+                Log.d("YuTaoHttp", "│请求地址：$url")
+                Log.d("YuTaoHttp", "│headers：$_headers")
+                if (_params.isNotEmpty()) {
+                    Log.d("YuTaoHttp", "│ params：$_params")
                 }
-                if (raw != null){
-                    Log.d("YuTaoHttp","│    raw：$raw")
+                if (raw != null) {
+                    Log.d("YuTaoHttp", "│    raw：$raw")
                 }
                 Log.d("YuTaoHttp", "│请求结果：" + String(it))
-                Log.d("YuTaoHttp", "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.d(
+                    "YuTaoHttp",
+                    "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
+                )
             }
             _success(String(it))
             _finish()
@@ -107,33 +128,46 @@ open class RequestWrapper {
             request.tag = tag
         }
         // 添加 headers
-        request.headers = _headers
+        if (Http.headers.isNotEmpty()) {
+            request.headers = Http.headers
+        }
+        if (_headers.isNotEmpty()) {
+            request.headers = _headers
+        }
+
         // 设置 params
         request.params = _params
 
-        if (request is UploadRequest){
+        if (request is UploadRequest) {
             request.fileParams = _fileParams
         }
 
     }
 
-    open fun getRequest(method: Int, url: String, errorListener: Response.ErrorListener? = Response
-            .ErrorListener {}): ByteRequest {
+    open fun getRequest(
+        method: Int, url: String, errorListener: Response.ErrorListener? = Response
+            .ErrorListener {}
+    ): ByteRequest {
         return if (!raw.isNullOrEmpty() && method in Request.Method.POST..Request.Method.PUT) {
             JsonRequest(method, url, raw!!, errorListener)
         } else if (method == Request.Method.POST && _fileParams.isNotEmpty()) {
             UploadRequest(url, errorListener)
-        }else{
+        } else {
             ByteRequest(method, url, errorListener)
         }
     }
 
-    private fun getGetUrl(url: String, params: MutableMap<String, String>, toQueryString: (map: Map<String, String>) ->
-    String): String {
+    private fun getGetUrl(
+        url: String,
+        params: MutableMap<String, String>,
+        toQueryString: (map: Map<String, String>) ->
+        String
+    ): String {
         return if (params.isEmpty()) url else "$url?${toQueryString(params)}"
     }
 
-    private fun <K, V> Map<K, V>.toQueryString(): String = this.map { "${it.key}=${it.value}" }.joinToString("&")
+    private fun <K, V> Map<K, V>.toQueryString(): String =
+        this.map { "${it.key}=${it.value}" }.joinToString("&")
 }
 
 class RequestPairs {
@@ -143,12 +177,18 @@ class RequestPairs {
     }
 }
 
+@SuppressLint("StaticFieldLeak")
 object Http {
     private var mRequestQueue: RequestQueue? = null
     var debug = false
-    lateinit var mcontext:Context
-    fun init(context: Context,debug:Boolean = false) {
-        Http.debug = debug
+    var baseUrl = ""
+    var connectTimeout = 60L
+    var readTimeout = 60L
+    var writeTimeout = 60L
+    var pingInterval = 5L
+    var headers = HashMap<String, String>()
+    lateinit var mcontext: Context
+    fun init(context: Context) {
         mcontext = context
         mRequestQueue
         // Set up the network to use OKHttpURLConnection as the HTTP client.
@@ -156,13 +196,14 @@ object Http {
         // Activity or BroadcastReceiver if someone passes one in.
         val cookieJar = PersistentCookieJar(SetCookieCache(), SharedPrefsCookiePersistor(context))
         val okHttpClient = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .pingInterval(5, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
-            .writeTimeout(60, TimeUnit.SECONDS)
+            .connectTimeout(connectTimeout, TimeUnit.SECONDS)
+            .pingInterval(pingInterval, TimeUnit.SECONDS)
+            .readTimeout(readTimeout, TimeUnit.SECONDS)
+            .writeTimeout(writeTimeout, TimeUnit.SECONDS)
             .cookieJar(cookieJar)
             .build()
-        mRequestQueue = Volley.newRequestQueue(context.applicationContext, OkHttpStack(okHttpClient))
+        mRequestQueue =
+            Volley.newRequestQueue(context.applicationContext, OkHttpStack(okHttpClient))
     }
 
     fun getRequestQueue(): RequestQueue {
