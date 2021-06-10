@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
         val map = HashMap<String,String>()
         map["token"] = "123"
         map["sss"] = "456"
-        get("httpscyutao.com.com/wxminiapp/user/login",map){
+        get("/wxminiapp/user/login",map){
             Log.e("222", "$it")
         }
     }
