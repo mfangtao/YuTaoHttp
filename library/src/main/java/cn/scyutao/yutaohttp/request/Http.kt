@@ -70,7 +70,6 @@ open class RequestWrapper {
             url = getGetUrl(url, _params) { it.toQueryString() }
         }
         _request = getRequest(method, url) {
-            Toast.makeText(Http.mcontext, it.message.toString(), Toast.LENGTH_LONG).show()
             if (Http.debug) {
                 Log.e(
                     "YuTaoHttp",
