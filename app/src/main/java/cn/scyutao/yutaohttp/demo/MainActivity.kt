@@ -13,25 +13,25 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        var mapHeader = HashMap<String, String>()
+        mapHeader["token"] = "thisfasjkfhkajlshfkl"
         Http.init(this)
         Http.debug = true
         Http.baseUrl = "https://jkmb.scyutao.com/"
+        Http.headers = mapHeader
 
-        val map = HashMap<String,String>()
+        val map = HashMap<String, String>()
         map["token"] = "123"
         map["sss"] = "456"
-        get("/wxminiapp/user/login",map){
+        get("/wxminiapp/user/login", map) {
             Log.e("222", "$it")
         }
     }
-    fun get(urlStr:String, paramss: HashMap<String,String>, success: (String) -> Unit){
-        Http.get{
+
+    fun get(urlStr: String, paramss: HashMap<String, String>, success: (String) -> Unit) {
+        Http.get {
             url = urlStr
             _params = paramss
-            headers{
-                "token" - "22"
-                "source" - "3"
-            }
             onSuccess {
 
             }

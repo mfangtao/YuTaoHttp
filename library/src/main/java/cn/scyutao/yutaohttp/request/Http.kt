@@ -127,8 +127,8 @@ open class RequestWrapper {
             request.tag = tag
         }
         // 添加 headers
-        if (Http.headers.isNotEmpty()) {
-            request.headers = Http.headers
+        if (_headers.isEmpty()){
+            _headers = Http.headers
         }
         if (_headers.isNotEmpty()) {
             request.headers = _headers
