@@ -3,7 +3,6 @@ package cn.scyutao.yutaohttp.request
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.android.volley.*
 import com.android.volley.toolbox.Volley
 import com.franmontiel.persistentcookiejar.PersistentCookieJar
@@ -11,9 +10,13 @@ import com.franmontiel.persistentcookiejar.cache.SetCookieCache
 import com.franmontiel.persistentcookiejar.persistence.SharedPrefsCookiePersistor
 import cn.scyutao.yutaohttp.partial.partially1
 import cn.scyutao.yutaohttp.upload.UploadRequest
+import okhttp3.Cache
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
+import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 
 open class RequestWrapper {
@@ -71,23 +74,21 @@ open class RequestWrapper {
         }
         _request = getRequest(method, url) {
             if (Http.debug) {
-                Log.e(
-                    "YuTaoHttp",
-                    "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
-                )
-                Log.e("YuTaoHttp", "│请求地址：$url")
-                Log.e("YuTaoHttp", "│headers：$_headers")
+                val logStr = StringBuffer()
+                val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date())
+                logStr.append("──────────────────────────────── $time ────────────────────────────────\n")
+                logStr.append("┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n")
+                logStr.append("│请求地址：$url\n")
+                logStr.append("│headers：$_headers\n")
                 if (_params.isNotEmpty()) {
-                    Log.e("YuTaoHttp", "│ params：$_params")
+                    logStr.append("│ params：$_params\n")
                 }
                 if (raw != null) {
-                    Log.e("YuTaoHttp", "│    raw：$raw")
+                    logStr.append("│    raw：$raw\n")
                 }
-                Log.e("YuTaoHttp", "│请求结果：$it")
-                Log.e(
-                    "YuTaoHttp",
-                    "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
-                )
+                logStr.append("│请求结果：$it\n")
+                logStr.append("└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.e("YuTaoHttp", logStr.toString())
             }
             _fail(it)
             _finish()
@@ -95,23 +96,21 @@ open class RequestWrapper {
         _request.retryPolicy = DefaultRetryPolicy(60 * 1000, 0, 1.0f)
         _request._listener = Response.Listener {
             if (Http.debug) {
-                Log.d(
-                    "YuTaoHttp",
-                    "┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
-                )
-                Log.d("YuTaoHttp", "│请求地址：$url")
-                Log.d("YuTaoHttp", "│headers：$_headers")
+                val logStr = StringBuffer()
+                val time = SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(Date())
+                logStr.append("──────────────────────────────── $time ────────────────────────────────\n")
+                logStr.append("┌────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n")
+                logStr.append("│请求地址：$url\n")
+                logStr.append("│headers：$_headers\n")
                 if (_params.isNotEmpty()) {
-                    Log.d("YuTaoHttp", "│ params：$_params")
+                    logStr.append("│ params：$_params\n")
                 }
                 if (raw != null) {
-                    Log.d("YuTaoHttp", "│    raw：$raw")
+                    logStr.append("│    raw：$raw\n")
                 }
-                Log.d("YuTaoHttp", "│请求结果：" + String(it))
-                Log.d(
-                    "YuTaoHttp",
-                    "└────────────────────────────────────────────────────────────────────────────────────────────────────────────────"
-                )
+                logStr.append("│请求结果：${String(it)}\n")
+                logStr.append("└────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
+                Log.d("YuTaoHttp", logStr.toString())
             }
             _success(String(it))
             _finish()
@@ -127,7 +126,7 @@ open class RequestWrapper {
             request.tag = tag
         }
         // 添加 headers
-        if (_headers.isEmpty()){
+        if (_headers.isEmpty()) {
             _headers = Http.headers
         }
         if (_headers.isNotEmpty()) {
@@ -179,13 +178,41 @@ class RequestPairs {
 @SuppressLint("StaticFieldLeak")
 object Http {
     private var mRequestQueue: RequestQueue? = null
+
+    /**
+     * 调试模式  是否打印请求日志
+     */
     var debug = false
     var baseUrl = ""
+
+    /**
+     * 连接超时时间 默认60秒
+     */
     var connectTimeout = 60L
+    /**
+     * 读取超时时间 默认60秒
+     */
     var readTimeout = 60L
+    /**
+     * 输出超时时间 默认60秒
+     */
     var writeTimeout = 60L
+    /**
+     * ping超时时间 默认60秒
+     */
     var pingInterval = 5L
     var headers = HashMap<String, String>()
+
+    /**
+     * 缓存设置 如：Cache(File(externalCacheDir, "YUTAOHTTP"), 1024 * 1024 * 50)
+     */
+    var cache: Cache? = null
+
+    /**
+     * okHttpClient.addNetworkInterceptor()
+     */
+    var networkInterceptor: Interceptor? = null
+    var interceptors = ArrayList<Interceptor>()
     lateinit var mcontext: Context
     fun init(context: Context) {
         mcontext = context
@@ -200,9 +227,18 @@ object Http {
             .readTimeout(readTimeout, TimeUnit.SECONDS)
             .writeTimeout(writeTimeout, TimeUnit.SECONDS)
             .cookieJar(cookieJar)
-            .build()
+        if (cache != null) {
+            okHttpClient.cache(cache)
+        }
+        if (networkInterceptor != null) {
+            networkInterceptor?.let { okHttpClient.addNetworkInterceptor(it) }
+        }
+        for (item in interceptors) {
+            okHttpClient.addInterceptor(item)
+        }
+        val build = okHttpClient.build()
         mRequestQueue =
-            Volley.newRequestQueue(context.applicationContext, OkHttpStack(okHttpClient))
+            Volley.newRequestQueue(context.applicationContext, OkHttpStack(build))
     }
 
     fun getRequestQueue(): RequestQueue {
